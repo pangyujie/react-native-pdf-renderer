@@ -7,7 +7,7 @@
  *
  * https://github.com/facebook/react-native
  */
-
+/*
 import React, { Component } from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 import PdfRenderer from 'react-native-pdf-renderer';
@@ -55,3 +55,4 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
 });
+*/

@@ -1,5 +1,5 @@
-#import <React/RCTBridgeModule.h>
+// #import <React/RCTBridgeModule.h>
 
-@interface PdfRenderer : NSObject <RCTBridgeModule>
+// @interface PdfRenderer : NSObject <RCTBridgeModule>
 
-@end
+// @end

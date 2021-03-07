@@ -9,14 +9,14 @@ Pod::Spec.new do |s|
   s.description  = <<-DESC
                   react-native-pdf-renderer
                    DESC
-  s.homepage     = "https://github.com/github_account/react-native-pdf-renderer"
+  s.homepage     = "https://github.com/pangyujie/react-native-pdf-renderer"
   # brief license entry:
   s.license      = "MIT"
   # optional - use expanded license entry instead:
   # s.license    = { :type => "MIT", :file => "LICENSE" }
   s.authors      = { "pangyujie" => "pangyujie@outlook.com" }
   s.platforms    = { :ios => "9.0" }
-  s.source       = { :git => "https://github.com/github_account/react-native-pdf-renderer.git", :tag => "#{s.version}" }
+  s.source       = { :git => "https://github.com/pangyujie/react-native-pdf-renderer.git", :tag => "#{s.version}" }
 
   s.source_files = "ios/**/*.{h,c,m,swift}"
   s.requires_arc = true
