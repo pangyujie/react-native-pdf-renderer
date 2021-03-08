@@ -15,7 +15,7 @@ const resources: {[key: string]: Resource } = {
     resourceType: 'file',
   },
   file: {
-    resource: `${Platform.OS === 'ios' ? '' : '/sdcard/Download/'}downloadedDocument.pdf`,
+    resource: `${Platform.OS === 'ios' ? '' : '/storage/emulated/0/Download/'}downloadedDocument.pdf`,
     resourceType: 'file',
   },
   url: {

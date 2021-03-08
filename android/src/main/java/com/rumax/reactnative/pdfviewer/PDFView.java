@@ -8,11 +8,12 @@ package com.rumax.reactnative.pdfviewer;
 
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Rect;
 import android.graphics.pdf.PdfRenderer;
-import android.os.Environment;
 import android.os.ParcelFileDescriptor;
 import android.util.Base64;
-import android.util.DisplayMetrics;
 import android.view.View;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.DecelerateInterpolator;
@@ -23,13 +24,8 @@ import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.uimanager.events.RCTEventEmitter;
-//import com.github.barteksc.pdfviewer.listener.OnErrorListener;
-//import com.github.barteksc.pdfviewer.listener.OnLoadCompleteListener;
-//import com.github.barteksc.pdfviewer.listener.OnPageChangeListener;
-//import com.github.barteksc.pdfviewer.listener.OnPageScrollListener;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -75,6 +71,9 @@ public class PDFView extends View {
     public final static String EVENT_ON_PAGE_CHANGED = "onPageChanged";
     public final static String EVENT_ON_SCROLLED = "onScrolled";
     private ThemedReactContext context;
+    private Bitmap bitmap;
+    private Canvas canvas;
+    private Rect rect;
     private String resource;
     private File downloadedFile;
     private AsyncDownload downloadTask = null;
@@ -93,6 +92,8 @@ public class PDFView extends View {
     public PDFView(ThemedReactContext context) {
         super(context, null);
         this.context = context;
+        this.bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888);
+        this.canvas = new Canvas();
     }
 
     @Override
@@ -176,40 +177,35 @@ public class PDFView extends View {
     }
 
     private void renderFromFile(String filePath) {
-        InputStream input;
+        File file;
         try {
             if (filePath.startsWith("/")) { // absolute path, using FS
-                input = new FileInputStream(new File(filePath));
+                file = new File(filePath);
             } else { // from assets
                 AssetManager assetManager = context.getAssets();
-                input = assetManager.open(filePath, AssetManager.ACCESS_BUFFER);
+                InputStream input = assetManager.open(filePath, AssetManager.ACCESS_BUFFER);
+                file = File.createTempFile("temp", "pdf", context.getCacheDir());
+                this.copyInputStreamToFile(input, file);
             }
 //            configurator = this.fromStream(input);
 //            setupAndLoad();
-            System.out.println(input);
-            File file = new File(Environment.getExternalStorageDirectory() + "/Download/temp.pdf");
-            this.copyInputStreamToFile(input, file);
             System.out.println(file);
             ParcelFileDescriptor pdfFile = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY);
             PdfRenderer renderer = new PdfRenderer(pdfFile);
 
             int screenWidth = 1080;
 
-            // let us just render all pages
             final int pageCount = renderer.getPageCount();
             for (int i = 0; i < pageCount; i++) {
                 PdfRenderer.Page page = renderer.openPage(i);
                 int pageWidth = page.getWidth();
                 int pageHeight = page.getHeight();
 
-                Bitmap bitmap = Bitmap.createBitmap(pageWidth * screenWidth / pageHeight, screenWidth, Bitmap.Config.ARGB_8888);//根据屏幕的高宽缩放生成bmp对象
-                // say we render for showing on the screen
+                Bitmap bitmap = Bitmap.createBitmap(screenWidth, pageHeight / pageWidth * screenWidth, Bitmap.Config.ARGB_8888);
                 page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
 
-                // do stuff with the bitmap
+                this.canvas.drawBitmap(bitmap, this.rect, this.rect, new Paint());
 
-
-                // close the page
                 page.close();
             }
 

@@ -9,8 +9,8 @@ rm -rf lib
 mkdir lib
 
 # Remove flow types
-./node_modules/.bin/flow-remove-types src/index.js --pretty --out-file lib/index.js
-./node_modules/.bin/flow-remove-types src/RNPDFView.js --pretty --out-file lib/RNPDFView.js
+./node_modules/.bin/flow-remove-types index.js --pretty --out-file lib/index.js
+./node_modules/.bin/flow-remove-types RNPDFView.js --pretty --out-file lib/RNPDFView.js
 
 # TypeScript
 cp ./index.d.ts ./lib
