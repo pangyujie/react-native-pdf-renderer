@@ -94,6 +94,7 @@ public class PDFView extends View {
         this.context = context;
         this.bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888);
         this.canvas = new Canvas();
+        this.draw(this.canvas);
     }
 
     @Override
@@ -201,7 +202,9 @@ public class PDFView extends View {
                 int pageWidth = page.getWidth();
                 int pageHeight = page.getHeight();
 
-                Bitmap bitmap = Bitmap.createBitmap(screenWidth, pageHeight / pageWidth * screenWidth, Bitmap.Config.ARGB_8888);
+                int transformedHeight = pageHeight / pageWidth * screenWidth;
+
+                Bitmap bitmap = Bitmap.createBitmap(screenWidth, transformedHeight, Bitmap.Config.ARGB_8888);
                 page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
 
                 this.canvas.drawBitmap(bitmap, this.rect, this.rect, new Paint());
