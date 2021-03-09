@@ -13,8 +13,9 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.pdf.PdfRenderer;
 import android.os.ParcelFileDescriptor;
+import android.support.v7.widget.AppCompatImageView;
 import android.util.Base64;
-import android.view.View;
+import android.util.DisplayMetrics;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.DecelerateInterpolator;
 
@@ -29,8 +30,11 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
-public class PDFView extends View {
+public class PDFView extends AppCompatImageView {
     public class Configurator {
         public Configurator defaultPage(int page) {
             return this;
@@ -92,9 +96,6 @@ public class PDFView extends View {
     public PDFView(ThemedReactContext context) {
         super(context, null);
         this.context = context;
-        this.bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888);
-        this.canvas = new Canvas();
-        this.draw(this.canvas);
     }
 
     @Override
@@ -185,7 +186,7 @@ public class PDFView extends View {
             } else { // from assets
                 AssetManager assetManager = context.getAssets();
                 InputStream input = assetManager.open(filePath, AssetManager.ACCESS_BUFFER);
-                file = File.createTempFile("temp", "pdf", context.getCacheDir());
+                file = File.createTempFile("pdf_", ".pdf", context.getCacheDir());
                 this.copyInputStreamToFile(input, file);
             }
 //            configurator = this.fromStream(input);
@@ -194,28 +195,58 @@ public class PDFView extends View {
             ParcelFileDescriptor pdfFile = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY);
             PdfRenderer renderer = new PdfRenderer(pdfFile);
 
-            int screenWidth = 1080;
+            DisplayMetrics metrics = new DisplayMetrics();
+            Objects.requireNonNull(this.context.getCurrentActivity()).getWindowManager().getDefaultDisplay().getMetrics(metrics);
+            int screenWidth = metrics.widthPixels;
 
             final int pageCount = renderer.getPageCount();
+            int totalHeight = 0;
             for (int i = 0; i < pageCount; i++) {
                 PdfRenderer.Page page = renderer.openPage(i);
                 int pageWidth = page.getWidth();
                 int pageHeight = page.getHeight();
-
-                int transformedHeight = pageHeight / pageWidth * screenWidth;
-
-                Bitmap bitmap = Bitmap.createBitmap(screenWidth, transformedHeight, Bitmap.Config.ARGB_8888);
-                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
-
-                this.canvas.drawBitmap(bitmap, this.rect, this.rect, new Paint());
-
+                int transformedHeight = (int)((pageHeight / (double)pageWidth) * screenWidth);
+                totalHeight += transformedHeight;
                 page.close();
             }
+            this.bitmap = Bitmap.createBitmap(screenWidth, totalHeight, Bitmap.Config.ARGB_8888);
+            this.canvas = new Canvas(bitmap);
 
+
+            List<Bitmap> bitmaps = new ArrayList<>();
+            for (int i = 0; i < pageCount; i++) {
+                PdfRenderer.Page page = renderer.openPage(i);
+                int pageWidth = page.getWidth();
+                int pageHeight = page.getHeight();
+                int transformedHeight = (int)((pageHeight / (double)pageWidth) * screenWidth);
+                Bitmap pageBitmap = Bitmap.createBitmap(screenWidth, transformedHeight, Bitmap.Config.ARGB_8888);
+                page.render(pageBitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
+                bitmaps.add(pageBitmap);
+                page.close();
+
+            }
+
+            Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            paint.setFilterBitmap(true);
+            paint.setDither(true);
+            int heightCount = 0;
+            for (Bitmap bitmap : bitmaps) {
+                int bottom = bitmap.getHeight() + heightCount;
+                Rect srcRect = new Rect(0, 0, bitmap.getWidth(), bitmap.getHeight());
+                Rect destRect = new Rect(0, heightCount, bitmap.getWidth(), bottom);
+                this.canvas.drawBitmap(bitmap, srcRect, destRect, paint);
+                this.canvas.drawLine(0, bottom + 1, bitmap.getWidth(), bottom + 1, paint);
+                heightCount += bitmap.getHeight() + 1;
+            }
+
+            this.setImageBitmap(this.bitmap);
 
             // close the renderer
             renderer.close();
             pdfFile.close();
+            if (!filePath.startsWith("/")) {
+                file.delete();
+            }
         } catch (IOException e) {
             onError(e);
         }
